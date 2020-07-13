@@ -1,4 +1,4 @@
-using DifferentialEquations, DiffEqGPU, CUDAnative, CUDAdrv, CPUTime, Statistics
+using DifferentialEquations, DiffEqGPU, CUDAnative, CUDAdrv, CPUTime, Statistics, Plots
 
 """
 Warning:
@@ -7,8 +7,8 @@ Warning:
 """
 
 #settings
-const numberOfParameters = 16
-const numberOfRuns = 2
+const numberOfParameters = 1024
+const numberOfRuns = 3
 const gpuID = 0 #Nvidia titan black device
 
 #select device
