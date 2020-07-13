@@ -1,9 +1,11 @@
 using DifferentialEquations, DiffEqGPU, CUDAnative, CUDAdrv, CPUTime, Statistics
 
 #settings
-const numberOfParameters = 46080
-const rollOut = 2
-const numberOfRuns = 3
+const numberOfParameters = 460800
+const rollOut = 64
+const numberOfTrajectories = Int64(numberOfParameters/rollOut)
+const batchSize = numberOfTrajectories
+const numberOfRuns = 2
 const gpuID = 0 #Nvidia titan black device
 
 #select device
@@ -52,6 +54,7 @@ for runs in 1:numberOfRuns
     RK4(),
     EnsembleGPUArray(),
     trajectories=Int64(numberOfParameters/rollOut),
+    batch_size = batchSize,
     save_everystep = false,
     save_start = false,
     save_end = true,

@@ -1,7 +1,14 @@
 using DifferentialEquations, DelimitedFiles, Plots, CPUTime
+using DiffEqGPU, CUDAnative, CUDAdrv
 
+#settings
 const numberOfRuns = 3
-const numberOfParameters = 1024 #number of different parameters for each control variable
+const numberOfParameters = 512 #number of different parameters for each control variable
+const gpuID = 0 #Nvidia titan black device
+
+#select device
+device!(CuDevice(gpuID))
+println("Running on "*string(CuDevice(gpuID)))
 
 function logRange(startVal,endVal,intervals)
     intervalDelta = endVal/startVal
@@ -63,6 +70,7 @@ end
 #ensemble problem
 function prob_func!(problem,i,repeat)
     @inbounds begin
+        println(i)
         #calculating indexes
         problem.u0[1] = initialValues[i,1]
         problem.u0[2] = initialValues[i,2]
@@ -98,14 +106,14 @@ for runs in 1:numberOfRuns
     tStart = CPUtime_us()
 
     #transient
-    tSpan = (0.0,1024.0)
+    tSpan = (0.0,1.0)
     prob = ODEProblem(keller_miksis!,y0,tSpan,C)
     ensemble_prob = EnsembleProblem(prob,prob_func = prob_func!)
 
     global res = solve(
         ensemble_prob,
         DP5(),
-        EnsembleSerial(),
+        EnsembleGPUArray(),
         abstol = 1e-10,
         reltol = 1e-10,
         trajectories= numberOfParameters,
@@ -122,14 +130,14 @@ for runs in 1:numberOfRuns
     end
 
     #save
-    tSpan = (0.0,64.0)
+    tSpan = (0.0,1.0)
     prob = ODEProblem(keller_miksis!,y0,tSpan,C)
     ensemble_prob = EnsembleProblem(prob,prob_func = prob_func!)
 
     global res = solve(
         ensemble_prob,
         DP5(),
-        EnsembleSerial(),
+        EnsembleGPUArray(),
         abstol = 1e-10,
         reltol = 1e-10,
         trajectories= numberOfParameters,
