@@ -1,4 +1,4 @@
-using DifferentialEquations, DiffEqGPU, CUDAnative, CUDAdrv, CPUTime, Statistics, Plots
+using DifferentialEquations, DiffEqGPU, CUDAnative, CUDAdrv, CPUTime, Statistics, Plots, DelimitedFiles
 
 """
 Warning:
