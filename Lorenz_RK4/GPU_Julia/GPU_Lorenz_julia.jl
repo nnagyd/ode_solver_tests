@@ -1,9 +1,9 @@
 using DifferentialEquations, DiffEqGPU, CUDAnative, CUDAdrv, CPUTime, Statistics
 
 #settings
-const numberOfParameters = 460800
-const rollOut = 64
-const numberOfTrajectories = Int64(numberOfParameters/rollOut)
+const numberOfParameters = 46080
+const unroll = 2
+const numberOfTrajectories = Int64(numberOfParameters/unroll)
 const batchSize = numberOfTrajectories
 const numberOfRuns = 2
 const gpuID = 0 #Nvidia titan black device
@@ -15,7 +15,7 @@ println("Running on "*string(CuDevice(gpuID)))
 #ode
 function lorenz!(du,u,p,t)
   @inbounds begin
-    for j in 1:rollOut
+    for j in 1:unroll
       index = 3(j-1)+1
       du[index] = 10.0 * (u[index+1] - u[index])
       du[index+1] = p[j] * u[index] - u[index+1] - u[index] * u[index+2]
@@ -27,16 +27,16 @@ end
 
 #parameters and initial conditions
 parameterList = range(0.0,stop = 21.0,length=numberOfParameters)
-p = zeros(rollOut,1)
+p = zeros(unroll,1)
 tspan = (0.0,10.0)
-u0 = ones(rollOut*3,1)
+u0 = ones(unroll*3,1)
 
 #parameter change function
 #parameterChange = (prob,i,repeat) -> remake(prob,p=parameterList[i]) #it has slightly more allocations
 function parameterChange!(prob,i,repeat)
-  index = Int64(rollOut*i)+1
-  for j in 1:rollOut
-    prob.p[j] = parameterList[index-rollOut]
+  index = Int64(unroll*i)+1
+  for j in 1:unroll
+    prob.p[j] = parameterList[index-unroll]
   end
   prob
 end
@@ -53,7 +53,7 @@ for runs in 1:numberOfRuns
     ensembleProb,
     RK4(),
     EnsembleGPUArray(),
-    trajectories=Int64(numberOfParameters/rollOut),
+    trajectories=Int64(numberOfParameters/unroll),
     batch_size = batchSize,
     save_everystep = false,
     save_start = false,

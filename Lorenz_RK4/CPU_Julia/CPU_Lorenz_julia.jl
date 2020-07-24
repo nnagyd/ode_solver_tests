@@ -1,23 +1,23 @@
 using DifferentialEquations, CPUTime, Statistics
 
 #settings
-const rollOut = 128
+const unroll = 128
 const numberOfParameters = 46080
 const numberOfRuns = 3
 
 #parameters and initial conditions
 parameterList = collect(range(0.0, stop = 21.0, length = numberOfParameters))
-p = Vector{Float64}(undef,rollOut)
+p = Vector{Float64}(undef,unroll)
 tspan = (0.0, 10.0)
-u0 = Vector{Float64}(undef,3rollOut)
-for i in 1:3rollOut
+u0 = Vector{Float64}(undef,3unroll)
+for i in 1:3unroll
   u0[i] = 10.
 end
 
 #ODE
 function lorenz!(du, u, p, t)
   @inbounds begin
-    @simd for j in 1:rollOut
+    @simd for j in 1:unroll
       index = 3(j-1)+1
       du[index] = 10.0 * (u[index+1] - u[index])
       du[index+1] = p[j] * u[index] - u[index+1] - u[index] * u[index+2]
@@ -32,9 +32,9 @@ times = Vector{Float64}(undef,numberOfRuns)
 for runs in 1:numberOfRuns
   tStart = CPUtime_us()
 
-  for j in 1:rollOut:numberOfParameters
+  for j in 1:unroll:numberOfParameters
     #defining ODE
-    p = parameterList[j:j+rollOut-1]
+    p = parameterList[j:j+unroll-1]
     prob = ODEProblem(lorenz!, u0, tspan, p)
 
     solve(
@@ -54,6 +54,6 @@ end
 
 println("End of test")
 println("Parameter number: "*string(numberOfParameters))
-println("RollOut: "*string(rollOut))
+println("Unroll: "*string(unroll))
 println("Time: "*string(times[2:numberOfRuns]))
 println("Avg: "*string(mean(times[2:numberOfRuns])))

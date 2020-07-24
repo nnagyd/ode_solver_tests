@@ -1,15 +1,15 @@
 using DifferentialEquations, CPUTime, Statistics
 
 #settings
-const rollOut = 128
+const unroll = 128
 const numberOfParameters = 46080
 const numberOfRuns = 3
 
 #parameters and initial conditions
 parameterList = range(0.0, stop = 21.0, length = numberOfParameters)
-p = zeros(rollOut,1)
+p = zeros(unroll,1)
 tspan = (0.0, 10.0)
-u0 = ones(3*rollOut,1)*10
+u0 = ones(3*unroll,1)*10
 
 #ODE
 function lorenz!(du, u, p, t)
@@ -23,8 +23,8 @@ end
 
 #parameter change function
 function parameterChange!(prob, i, repeat)
-  index = Int64(rollOut*i)
-  for j in 1:rollOut
+  index = Int64(unroll*i)
+  for j in 1:unroll
     prob.p[j] = parameterList[index-j+1]
   end
   prob
@@ -42,7 +42,7 @@ for runs in 1:numberOfRuns
     ensemble_prob,
     RK4(),
     EnsembleSerial(),
-    trajectories = numberOfParameters/rollOut,
+    trajectories = numberOfParameters/unroll,
     save_everystep = false,
     save_start = false,
     save_end = true,
@@ -57,6 +57,6 @@ end
 
 println("End of test")
 println("Parameter number: "*string(numberOfParameters))
-println("RollOut: "*string(rollOut))
+println("Unroll: "*string(unroll))
 println("Time: "*string(times[2:numberOfRuns]))
 println("Avg: "*string(mean(times[2:numberOfRuns])))

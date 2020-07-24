@@ -15,10 +15,10 @@ double * linspace(double a, double b, int numberOfInts)
 	return list;
 }
 
-template<int rollOut>
+template<int unroll>
 inline void F(Vec4d *xp, Vec4d *x, Vec4d *p)
 {
-	for (int i = 0, j = 0; j < rollOut; i += 3,j++)
+	for (int i = 0, j = 0; j < unroll; i += 3,j++)
 	{
 		xp[i] = 10.*(x[i+1] - x[i]);
 		xp[i+1] = p[j] * x[i] - x[i+1] - x[i] * x[i+2];
@@ -46,13 +46,13 @@ struct RK4constants //4*4 [double]
 int main()
 {
 	const int numberOfProblems = 46080;
-	const int rollOut = 2; //amount of manual unrolling of outer for loop
+	const int unroll = 2; //amount of manual unrolling of outer for loop
 	const int numberOfVariablesPerEquation = 3;
-	const int numberOfVariablesTotal = numberOfVariablesPerEquation * rollOut;
+	const int numberOfVariablesTotal = numberOfVariablesPerEquation * unroll;
 	const int numberOfSteps = 1000;
-	const int outerForLoopStep = 4 * rollOut;
+	const int outerForLoopStep = 4 * unroll;
 	const double dt = 1e-2;
-	RK4dynamicVariables<numberOfVariablesTotal, rollOut> v;
+	RK4dynamicVariables<numberOfVariablesTotal, unroll> v;
 	RK4constants c;
 	c.dt = dt;
 	c.dtp2 = dt / 2.;
@@ -74,7 +74,7 @@ int main()
 
 	for (int i = 0; i < numberOfProblems; i+=outerForLoopStep) //parameter sweep loop
 	{
-		for (int l = 0,offset = i; l < rollOut; l++,offset += 4)
+		for (int l = 0,offset = i; l < unroll; l++,offset += 4)
 		{
 			v.p[l].load_a(p_Parameters + offset); //loading parameters from alligned memory
 		}
@@ -86,28 +86,28 @@ int main()
 
 		for (int j = 0; j < numberOfSteps; j++) //integration loop
 		{
-			F<rollOut>(v.kAct, v.x, v.p); //k1
+			F<unroll>(v.kAct, v.x, v.p); //k1
 			for (int l = 0; l < numberOfVariablesTotal; l++)
 			{
 				v.kSum[l] = v.kAct[l];
 				v.xTmp[l] = v.x[l] + c.dtp2 * v.kAct[l];
 			}
 
-			F<rollOut>(v.kAct, v.xTmp, v.p); //k2
+			F<unroll>(v.kAct, v.xTmp, v.p); //k2
 			for (int l = 0; l < numberOfVariablesTotal; l++)
 			{
 				v.kSum[l] += c.c2*v.kAct[l];
 				v.xTmp[l] = v.x[l] + c.dtp2 * v.kAct[l];
 			}
 
-			F<rollOut>(v.kAct, v.xTmp, v.p); //k3
+			F<unroll>(v.kAct, v.xTmp, v.p); //k3
 			for (int l = 0; l < numberOfVariablesTotal; l++)
 			{
 				v.kSum[l] += c.c2*v.kAct[l];
 				v.xTmp[l] = v.x[l] + c.dt * v.kAct[l];
 			}
 
-			F<rollOut>(v.kAct, v.xTmp, v.p); //k4
+			F<unroll>(v.kAct, v.xTmp, v.p); //k4
 			for (int l = 0; l < numberOfVariablesTotal; l++)
 			{
 				v.kSum[l] += v.kAct[l];

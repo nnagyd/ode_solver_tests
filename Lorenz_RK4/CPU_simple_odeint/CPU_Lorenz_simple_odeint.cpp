@@ -6,7 +6,7 @@
 // Description : lorenz with odeint RK4
 //============================================================================
 
-//rollout 8 is fastest
+//unroll 8 is fastest
 #include <array>
 #include <chrono>
 #include <boost/numeric/odeint.hpp>
@@ -20,8 +20,8 @@ double inv_num = 1.0/(num-1);
 const int step_number = 1000;
 const double dt = 0.01;
 const double t_max = dt*step_number;
-const int rollOut = 8;
-const int arraySize = 3 * rollOut;
+const int unroll = 8;
+const int arraySize = 3 * unroll;
 
 typedef std::array< double, arraySize> state_type;
 
@@ -68,14 +68,14 @@ int main() {
 	cout << "Lorenz RK4 started" << endl;
 	runge_kutta4<state_type, double, state_type, double, array_algebra> stepper;
 	state_type x;
-	
+
 	/*for(int j = 0;j < 13;j++){
 		num = nums[j];
 		inv_num = 1.0/(num-1);*/
 		cout << num << endl;
 		auto t1 = chrono::high_resolution_clock::now();
-	
-		for(int u = 0;u < num;u+=rollOut){
+
+		for(int u = 0;u < num;u+=unroll){
 			for(int ii=0;ii < arraySize;ii++) x[ii] = 10;
 
 			k_global = u * 21 * inv_num;
@@ -96,6 +96,6 @@ int main() {
 		cout << "Done" << endl;
 		cout << "Time (ms):" << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << endl;
 	//}
-	
+
 	return 0;
 }
