@@ -3,7 +3,7 @@ using DiffEqGPU, CUDAnative, CUDAdrv
 
 #settings
 const numberOfRuns = 3
-const numberOfParameters = 512 #number of different parameters for each control variable
+const numberOfParameters = 256 #number of different parameters for each control variable
 const gpuID = 0 #Nvidia titan black device
 
 #select device
@@ -32,12 +32,10 @@ const γ = 1.4
 const c_L = 1.497251785455527e+03
 const μ_L = 8.902125058209557e-04
 const θ = 0
-
-#outer parameters are P_A1 and P_A2
-P_A1_val = 1.5 #1.1
-P_A2_val = 0 #1.2
-f_1 = logRange(20.0,1_000.0,numberOfParameters)
-f_2 = 0
+const P_A1_val = 1.5
+const P_A2_val = 0
+const f_1 = logRange(20.0,1_000.0,numberOfParameters)
+const f_2 = 0
 
 initialValues = Array{Float64,2}(undef,(numberOfParameters,2))
 for i in 1:numberOfParameters
@@ -106,7 +104,7 @@ for runs in 1:numberOfRuns
     tStart = CPUtime_us()
 
     #transient
-    tSpan = (0.0,1.0)
+    tSpan = (0.0,1024.0)
     prob = ODEProblem(keller_miksis!,y0,tSpan,C)
     ensemble_prob = EnsembleProblem(prob,prob_func = prob_func!)
 
@@ -130,7 +128,7 @@ for runs in 1:numberOfRuns
     end
 
     #save
-    tSpan = (0.0,1.0)
+    tSpan = (0.0,64.0)
     prob = ODEProblem(keller_miksis!,y0,tSpan,C)
     ensemble_prob = EnsembleProblem(prob,prob_func = prob_func!)
 
@@ -167,6 +165,7 @@ end
 
 writedlm("keller_miksis_endvalues.csv", outputData, ',')
 
+#findig global maxima
 y_maxs = Vector{Float64}(undef,numberOfParameters)
 for i in 1:numberOfParameters
     max = 0
@@ -178,4 +177,5 @@ for i in 1:numberOfParameters
     y_maxs[i] = max
 end
 
+#plot for comparision
 scatter(f_1,y_maxs,xaxis = (:log,100.0:100.:1000),yaxis = 1:1:10,marker = (2,:black),legend = false,ylims = (1.,10.))

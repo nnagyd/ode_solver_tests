@@ -1,7 +1,7 @@
 using DifferentialEquations, DelimitedFiles, Plots, CPUTime
 
 const numberOfRuns = 3
-const numberOfParameters = 1024 #number of different parameters for each control variable
+const numberOfParameters = 256 #number of different parameters for each control variable
 
 function logRange(startVal,endVal,intervals)
     intervalDelta = endVal/startVal
@@ -25,12 +25,10 @@ const γ = 1.4
 const c_L = 1.497251785455527e+03
 const μ_L = 8.902125058209557e-04
 const θ = 0
-
-#outer parameters are P_A1 and P_A2
-P_A1_val = 1.5 #1.1
-P_A2_val = 0 #1.2
-f_1 = logRange(20.0,1_000.0,numberOfParameters)
-f_2 = 0
+const P_A1_val = 1.5
+const P_A2_val = 0
+const f_1 = logRange(20.0,1_000.0,numberOfParameters)
+const f_2 = 0
 
 initialValues = Array{Float64,2}(undef,(numberOfParameters,2))
 for i in 1:numberOfParameters
@@ -40,7 +38,7 @@ end
 
 #ODE settings
 C = Vector{Float64}(undef,13) #C1-C13 -> ODE constants
-y0 = [1.0,0.0] #inital conditions0
+y0 = [1.0,0.0] #inital conditions
 
 #ODE system
 function keller_miksis!(dy,y,C,τ)
@@ -63,6 +61,7 @@ end
 #ensemble problem
 function prob_func!(problem,i,repeat)
     @inbounds begin
+        println(i)
         #calculating indexes
         problem.u0[1] = initialValues[i,1]
         problem.u0[2] = initialValues[i,2]
@@ -159,6 +158,7 @@ end
 
 writedlm("keller_miksis_endvalues.csv", outputData, ',')
 
+#finding global maxima
 y_maxs = Vector{Float64}(undef,numberOfParameters)
 for i in 1:numberOfParameters
     max = 0
@@ -170,4 +170,5 @@ for i in 1:numberOfParameters
     y_maxs[i] = max
 end
 
+#plot for comparision
 scatter(f_1,y_maxs,xaxis = (:log,100.0:100.:1000),yaxis = 1:1:10,marker = (2,:black),legend = false,ylims = (1.,10.))
