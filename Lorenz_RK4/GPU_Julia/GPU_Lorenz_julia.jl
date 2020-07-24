@@ -19,7 +19,7 @@ function lorenz!(du,u,p,t)
       index = 3(j-1)+1
       du[index] = 10.0 * (u[index+1] - u[index])
       du[index+1] = p[j] * u[index] - u[index+1] - u[index] * u[index+2]
-      du[index+2] = u[index] * u[index+1] - 2.66666666 * u[index+2]
+      du[index+2] = u[index] * u[index+1] - 8.0/3.0 * u[index+2]
     end
   end
   nothing
