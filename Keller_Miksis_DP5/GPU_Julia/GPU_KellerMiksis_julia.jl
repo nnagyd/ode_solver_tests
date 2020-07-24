@@ -68,7 +68,6 @@ end
 #ensemble problem
 function prob_func!(problem,i,repeat)
     @inbounds begin
-        println(i)
         #calculating indexes
         problem.u0[1] = initialValues[i,1]
         problem.u0[2] = initialValues[i,2]
