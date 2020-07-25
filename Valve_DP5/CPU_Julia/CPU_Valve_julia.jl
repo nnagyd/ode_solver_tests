@@ -1,6 +1,6 @@
 using DifferentialEquations, DelimitedFiles, Plots, CPUTime
 
-const numberOfParameters = 16
+const numberOfParameters = 256
 const numberOfRuns = 3
 
 function valve!(dy,y,q,t)
@@ -49,7 +49,6 @@ function local_max!(integrator, idx)
                 outputData[i,Int64(j+33)] = integrator.u[1]
             end
         elseif idx == 2 #poincare section, end of iteration, start of new iteration
-            #println("local max at "*string(integrator.u[1]))
             integrator.p[2] = integrator.p[2]+1
             iterationNumber = integrator.p[2]
             i = Int64(integrator.p[3])
@@ -66,8 +65,6 @@ function local_max!(integrator, idx)
 
             # convergence detected at u[1] != 0
             if abs(integrator.p[4] - integrator.u[1]) < 1e-9 && abs(integrator.u[1])>1e-9
-                #println("Convergence detected at "*string(integrator.p[1]))
-                #println("Derivative "*string(integrator.u[2]))
                 outputData[i,2] = integrator.u[1]
                 integrator.t = 1e10
             end
@@ -126,6 +123,5 @@ plt = scatter(marker = 2,legend = false,xlims =(0.,10.),ylims = (-0.2,10.))
 for j in 2:65
     scatter!(plt,outputData[:,1],outputData[:,j],marker = 1,color = :black)
 end
-plt
 
 writedlm("data.csv", outputData, ',')

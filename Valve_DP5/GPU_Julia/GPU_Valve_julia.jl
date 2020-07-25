@@ -1,4 +1,4 @@
-using DifferentialEquations, DiffEqGPU, CUDAnative, CUDAdrv, CPUTime, Statistics, Plots, DelimitedFiles
+using DifferentialEquations, DiffEqGPU, CUDAnative, CuArrays, CUDAdrv, CPUTime, Plots, DelimitedFiles
 
 """
 Warning:
@@ -7,7 +7,7 @@ Warning:
 """
 
 #settings
-const numberOfParameters = 1024
+const numberOfParameters = 256
 const numberOfRuns = 3
 const gpuID = 0 #Nvidia titan black device
 
@@ -63,7 +63,6 @@ function local_max!(integrator, idx)
                 outputData[i,Int64(j+33)] = integrator.u[1]
             end
         elseif idx == 2 #poincare section, end of iteration, start of new iteration
-            #println("local max at "*string(integrator.u[1]))
             integrator.p[2] = integrator.p[2]+1
             iterationNumber = integrator.p[2]
             i = Int64(integrator.p[3])
@@ -80,8 +79,6 @@ function local_max!(integrator, idx)
 
             # convergence detected at u[1] != 0
             if abs(integrator.p[4] - integrator.u[1]) < 1e-9 && abs(integrator.u[1])>1e-9
-                #println("Convergence detected at "*string(integrator.p[1]))
-                #println("Derivative "*string(integrator.u[2]))
                 outputData[i,2] = integrator.u[1]
                 integrator.t = 1e10
             end
