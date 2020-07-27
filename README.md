@@ -1,2 +1,2 @@
-# odeteam
- programkódok a cikkhez
+# Test Codes for Manuscript
+ Communications in Nonlinear Science and Numerical Simulation
