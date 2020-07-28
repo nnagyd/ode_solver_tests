@@ -1,7 +1,7 @@
 using DifferentialEquations, DelimitedFiles, Plots, CPUTime
 
 const numberOfRuns = 3
-const numberOfParameters = 256 #number of different parameters for each control variable
+const numberOfParameters = 256
 
 function logRange(startVal,endVal,intervals)
     intervalDelta = endVal/startVal
@@ -43,17 +43,20 @@ y0 = [1.0,0.0] #inital conditions
 #ODE system
 function keller_miksis!(dy,y,C,τ)
     @inbounds begin
-        #parts of nominator
-        p1 = (C[13]+C[1]*y[2])*(1/y[1])^C[10]-C[2]*(1+C[9]*y[2])-C[3]/y[1]-C[4]*y[2]/y[1]
-        p2 = -(1-C[9]*y[2]/3.0)*3/2*y[2]*y[2]-(C[5]*sin(2*pi*τ)+C[6]*sin(2*pi*C[11]*τ+C[12]))*(1+C[9]*y[2])
-        p3 = -y[1]*((C[7]*cos(2*pi*τ))+C[8]*cos(2*pi*C[11]*τ+C[12]))
+        rx1 = 1/y[1]
+        p = rx1 ^ C[10]
 
-        N_KM = p1+p2+p3 #nominator
-        D_KM = y[1]-C[9]*y[1]*y[2]+C[4]*C[9] #denominator
+        s1,c1 = sincos(2*pi*τ)
+        s2 = sin(2*pi*C[11]*τ+C[12])
+		c2 = cos(2*pi*C[11]*τ+C[12])
+
+        N = (C[13]+C[1]*y[2])*p-C[2]*(1+C[9]*y[2])-C[3]*rx1-C[4]*y[2]*rx1-1.5*(1.0-C[9]*y[2]*(1.0/3.0))*y[2]*y[2]-(C[5]*s1+C[6]*s2)*(1+C[9]*y[2])-y[1]*((C[7]*c1)+C[8]*c2)
+        D = y[1]-C[9]*y[1]*y[2]+C[4]*C[9] #denominator
+        rD = 1.0 / D
 
         #ODE system
         dy[1] = y[2]
-        dy[2] = N_KM/D_KM
+        dy[2] = N * rD
     end
     nothing
 end
@@ -170,4 +173,5 @@ for i in 1:numberOfParameters
 end
 
 #plot for comparision
+plotly()
 scatter(f_1,y_maxs,xaxis = (:log,100.0:100.:1000),yaxis = 1:1:10,marker = (2,:black),legend = false,ylims = (1.,10.))
