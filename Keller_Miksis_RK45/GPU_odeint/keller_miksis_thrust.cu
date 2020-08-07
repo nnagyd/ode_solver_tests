@@ -41,8 +41,7 @@ typedef double value_type;
 typedef thrust::device_vector< value_type > state_type;
 typedef thrust::device_vector< int > int_vector;
 
-const int num = 12; //2 - 1414s 12 - 2113643ms
-const value_type inv_num = 1.0/(num-1);
+const int num = 128; 
 
 string file_name = "kellermiksis_thrust_output.txt";
 
@@ -259,10 +258,10 @@ public:
 					if(x < min) thrust::get< 5 >( t ) = x; //min
 					count = 5000;
 				}
+				thrust::get< 4 >( t ) = x;
+				thrust::get< 3 >( t ) = count;
 			}
-			thrust::get< 3 >( t ) = count;
 			thrust::get< 2 >( t ) = y;
-			thrust::get< 4 >( t ) = x;
         }
     };
 	
@@ -277,6 +276,7 @@ public:
 
 	template< class State >
     void operator()( State &x, double t )
+	//(const state_type &x , value_type t )
 	{
 		thrust::for_each(
                 thrust::make_zip_iterator( thrust::make_tuple(
@@ -313,14 +313,13 @@ private:
 int nums[18] = {256, 768, 1536, 3072, 3840, 5120, 7680, 15360, 30720, 46080, 61440, 76800, 92160, 122880, 184320, 307200, 768000, 4147200};
 
 int main() {
-	cout << "Impact dynamics started" << endl;
+	cout << "Keller-Miksis Thrust started" << endl;
 
 	typedef runge_kutta_cash_karp54< state_type , value_type , state_type , value_type > stepper_type;
 
 	//for(int jj=0; jj < 18;jj++){ //parameter loop
 	
 	//num = nums[jj];
-	//inv_num = 1.0/(num.1);
 	cout << num << endl;
 	auto t1 = chrono::high_resolution_clock::now();
 
