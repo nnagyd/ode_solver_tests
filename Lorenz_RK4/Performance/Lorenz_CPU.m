@@ -8,12 +8,16 @@ odeint_vcl_CPU.x = [256      512      1024    2048    4096    7680     15360    
 odeint_vcl_CPU.y = [.003     .006     .011    .025    .039    .057     .137     .286    .553    1.109    1.818    4.298    22.701];
 
 %CPU_Lorenz_Julia_ensemble.jl
-julia_CPU.x = [256	1024	2048	4096	7680	15360	46080	92160	184320	307200	768000	4147200];
-julia_CPU.y = [0.004	0.017	0.034	0.067	0.126	0.252	0.759	1.518	3.030	5.070	12.707	68.241];
+julia_CPU.x = [256      1024	2048	4096	7680	15360	46080	92160	184320	307200	768000	4147200];
+julia_CPU.y = [0.002	0.009	0.018	0.036	0.068	0.136	0.409	0.819	1.639	2.744	6.857	37.203];
 
 %CPU_Lorenz_Julia.jl
 julia_CPU_noEnsemble.x = [256	1024	2048	4096	7680	15360	46080	92160	184320	307200	768000	4147200];
-julia_CPU_noEnsemble.y = [0.004	0.018	0.035	0.070	0.134	0.265	0.789	1.573	3.138	5.268	13.109	70.675];
+julia_CPU_noEnsemble.y = [0.002	0.009	0.018	0.037	0.068	0.138	0.417	0.826	1.654	2.754	6.891	37.220];
+
+%CPU_Lorenz_simple_Julia.jl
+julia_CPU_simple.x = [256   1024	2048	4096	7680	15360	46080	92160	184320	307200	768000	4147200];
+julia_CPU_simple.y = [0.002 0.007	0.015	0.030	0.057	0.114	0.343	0.692	1.380	2.298	5.746	31.036];
 
 %CPU_Lorenz_hand_tuned.cpp
 VCL_hand_tuned_CPU.x = [256      512         1024        2048        4096        7680        15360       46080       92160       184320      307200      768000      4147200];
@@ -25,18 +29,20 @@ odeint_CPU_loop.y = [7        5           11          22           44         83
 
 fig=figure(1); hold on;
 p1=plot(AhnertCPUv2.x,AhnertCPUv2.y);
-p2=plot(julia_CPU.x,julia_CPU.y);
+%p2=plot(julia_CPU.x,julia_CPU.y);
 p3=plot(odeint_vcl_CPU.x,odeint_vcl_CPU.y);
-p4=plot(julia_CPU_noEnsemble.x,julia_CPU_noEnsemble.y);
-p5=plot(VCL_hand_tuned_CPU.x,VCL_hand_tuned_CPU.y);
-p6=plot(odeint_CPU_loop.x,odeint_CPU_loop.y);
+p4=plot(julia_CPU_simple.x,julia_CPU_simple.y);
+%p5=plot(julia_CPU_noEnsemble.x,julia_CPU_noEnsemble.y);
+p6=plot(VCL_hand_tuned_CPU.x,VCL_hand_tuned_CPU.y);
+p7=plot(odeint_CPU_loop.x,odeint_CPU_loop.y);
 
 set(gca,'XScale','log','YScale','log','XLim',[1e2 1e7],'YLim',[1e-3 1e2],'XGrid','on','YGrid','on','Box','on','FontSize',14,'FontWeight','bold','FontName','Times');
 set(p1,'Color',[0 0 0], 'LineStyle','-','LineWidth',2);
-set(p2,'Color',[0 0 1], 'LineStyle','-','LineWidth',2);
-set(p3,'Color',[0 0.7 0.3], 'LineStyle','-','LineWidth',2);
-set(p4,'Color',[0 0.7 1], 'LineStyle','-','LineWidth',2);
-set(p5,'Color',[1 0.1 0.5], 'LineStyle','-','LineWidth',2);
-set(p6,'Color',[0.5 0.5 0], 'LineStyle','-','LineWidth',2);
+%set(p2,'Color',[0 0 1], 'LineStyle','-','LineWidth',2);
+set(p3,'Color',[0 0.6 0], 'LineStyle','-','LineWidth',2);
+set(p4,'Color',[0.7 0.0 1], 'LineStyle','-','LineWidth',2);
+%set(p5,'Color',[0 0.7 1], 'LineStyle','-','LineWidth',2);
+set(p6,'Color',[1 0.1 0.5], 'LineStyle','-','LineWidth',2);
+set(p7,'Color',[0.5 0.5 0], 'LineStyle','-','LineWidth',2);
 xlabel('N','FontSize',20,'FontWeight','bold','FontName','Times');
 ylabel('1000\timesRK4 step (s)','FontSize',20,'FontWeight','bold','FontName','Times');
