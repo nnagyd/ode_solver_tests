@@ -48,7 +48,7 @@ ensembleProb = EnsembleProblem(lorenzProblem,prob_func=parameterChange!)
 # compile
 solve(
   ensembleProb,
-  RK4(),
+  LoopRK4(),
   EnsembleGPUArray(),
   trajectories=Int64(numberOfParameters/unroll),
   batch_size = batchSize,
@@ -66,7 +66,7 @@ for runs in 1:numberOfRuns
   tStart = CPUtime_us()
   solve(
     ensembleProb,
-    RK4(),
+    LoopRK4(),
     EnsembleGPUArray(),
     trajectories=Int64(numberOfParameters/unroll),
     batch_size = batchSize,

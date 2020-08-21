@@ -55,6 +55,24 @@ cb = VectorContinuousCallback(
 global outputData = zeros(numberOfParameters,numberOfSaves*2);
 global lastVals = [0.0,1.0,2.0,3.0]
 
+#compile once
+tSpan = [0.0,1e10]
+y0 = [0.2,0.0,0.0]
+q[1] = parameterList[par]
+valveODE = ODEProblem(valve!,y0,tSpan,q)
+res = solve(
+    valveODE,
+    DP5(),
+    callback = cb,
+    abstol = 1e-10,
+    reltol = 1e-10,
+    save_everystep = false,
+    save_start = false,
+    save_end = true,
+    maxiters = 1e8,
+    dense=false,
+    dtmin = 1e-12)
+
 #simulation
 times =  Vector{Float64}(undef,numberOfRuns)
 for runs in 1:numberOfRuns

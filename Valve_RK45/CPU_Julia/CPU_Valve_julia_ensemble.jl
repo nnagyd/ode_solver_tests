@@ -93,6 +93,20 @@ valveODE = ODEProblem(valve!,y0,tSpan,q)
 cb = VectorContinuousCallback(condition,local_min!,2,affect_neg! = local_max!)
 ensemble_prob = EnsembleProblem(valveODE,prob_func = parameter_change!)
 
+# Compile once
+res = solve(
+    ensemble_prob,
+    DP5(),
+    EnsembleSerial(),
+    callback = cb,
+    abstol = 1e-10,
+    reltol = 1e-10,
+    trajectories= numberOfParameters,
+    save_everystep = false,
+    save_start = false,
+    save_end = true,
+    maxiters = 1e8,
+    dtmin = 1e-12)
 
 times =  Vector{Float64}(undef,numberOfRuns)
 for runs in 1:numberOfRuns

@@ -1,5 +1,5 @@
 using DifferentialEquations, DelimitedFiles, Plots, CPUTime
-using DiffEqGPU, CUDAnative, CUDAdrv
+using DiffEqGPU, CUDA
 
 #settings
 const numberOfRuns = 3
@@ -7,8 +7,8 @@ const numberOfParameters = 256
 const gpuID = 0 #Nvidia titan black device
 
 #select device
-device!(CuDevice(gpuID))
-println("Running on "*string(CuDevice(gpuID)))
+CUDA.device!(1)
+println("Running on "*string(gpuID))
 
 function logRange(startVal,endVal,intervals)
     intervalDelta = endVal/startVal
@@ -98,6 +98,24 @@ function prob_func!(problem,i,repeat)
     end
     problem
 end
+
+# Compile once
+tSpan = (0.0,1024.0)
+prob = ODEProblem(keller_miksis!,y0,tSpan,C)
+ensemble_prob = EnsembleProblem(prob,prob_func = prob_func!)
+res = solve(
+	ensemble_prob,
+	DP5(),
+	EnsembleGPUArray(),
+	abstol = 1e-10,
+	reltol = 1e-10,
+	trajectories= numberOfParameters,
+	save_everystep = false,
+	save_start = false,
+	save_end = true,
+	dense = false,
+	maxiters = 1e10,
+	dtmin = 1e-10)
 
 #solving ODE 3x and measuring elapsed CPU time
 times = Vector{Float64}(undef,numberOfRuns)

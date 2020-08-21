@@ -93,6 +93,24 @@ function prob_func!(problem,i,repeat)
     problem
 end
 
+# Compile once
+tSpan = (0.0,1024.0)
+prob = ODEProblem(keller_miksis!,y0,tSpan,C)
+ensemble_prob = EnsembleProblem(prob,prob_func = prob_func!)
+res = solve(
+	ensemble_prob,
+	DP5(),
+	EnsembleSerial(),
+	abstol = 1e-10,
+	reltol = 1e-10,
+	trajectories= numberOfParameters,
+	save_everystep = false,
+	save_start = false,
+	save_end = true,
+	dense = false,
+	maxiters = 1e10,
+	dtmin = 1e-10)
+
 #solving ODE 3x and measuring elapsed CPU time
 times = Vector{Float64}(undef,numberOfRuns)
 for runs in 1:numberOfRuns
