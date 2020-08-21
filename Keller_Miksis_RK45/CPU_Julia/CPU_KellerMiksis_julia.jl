@@ -42,7 +42,7 @@ y0 = [1.0,0.0] #inital conditions
 
 #ODE system
 function keller_miksis!(dy,y,C,τ)
-    @inbounds begin
+    @inbounds @muladd begin
         rx1 = 1/y[1]
         p = rx1 ^ C[10]
 

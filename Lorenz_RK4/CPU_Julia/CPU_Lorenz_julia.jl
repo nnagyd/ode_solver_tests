@@ -1,4 +1,4 @@
-using DifferentialEquations, CPUTime, Statistics, MuladdMacro
+using DifferentialEquations, CPUTime, Statistics, LoopVectorization
 
 #settings
 const unroll = 128
@@ -17,7 +17,7 @@ end
 
 #ODE
 function lorenz!(du, u, p, t)
-    @muladd @inbounds for j in 1:unroll
+    @avx for j in 1:unroll
       du[j] = 10.0 * (u[j+unroll] - u[j])
       du[j+unroll] = p[j] * u[j] - u[j+unroll] - u[j] * u[j+2*unroll]
       du[j+2*unroll] = u[j] * u[j+unroll] - 2.66666666 * u[j+2*unroll]
