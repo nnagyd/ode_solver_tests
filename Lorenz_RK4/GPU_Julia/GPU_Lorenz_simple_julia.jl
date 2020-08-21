@@ -1,4 +1,4 @@
-using DifferentialEquations, DiffEqGPU, CUDA, CPUTime, Statistics, MuladdMacro
+using DifferentialEquations, DiffEqGPU, CUDA, CPUTime, Statistics, SimpleDiffEq
 
 #settings
 const numberOfParameters = 46080
@@ -6,7 +6,7 @@ const unroll = 2
 const numberOfTrajectories = Int64(numberOfParameters/unroll)
 const batchSize = numberOfTrajectories
 const numberOfRuns = 2
-const gpuID = 1 #Nvidia titan black device
+const gpuID = 0 #Nvidia titan black device
 
 #select device
 CUDA.device!(gpuID)
@@ -29,7 +29,7 @@ end
 parameterList = range(0.0,stop = 21.0,length=numberOfParameters)
 p = zeros(unroll,1)
 tspan = (0.0,10.0)
-u0 = ones(unroll*3)
+u0 = ones(unroll*3,1)
 
 #parameter change function
 #parameterChange = (prob,i,repeat) -> remake(prob,p=parameterList[i]) #it has slightly more allocations
@@ -48,7 +48,7 @@ ensembleProb = EnsembleProblem(lorenzProblem,prob_func=parameterChange!)
 # compile
 solve(
   ensembleProb,
-  RK4(),
+  LoopRK4(),
   EnsembleGPUArray(),
   trajectories=Int64(numberOfParameters/unroll),
   batch_size = batchSize,
@@ -67,7 +67,7 @@ for runs in 1:numberOfRuns
   tStart = CPUtime_us()
   solve(
     ensembleProb,
-    RK4(),
+    LoopRK4(),
     EnsembleGPUArray(),
     trajectories=Int64(numberOfParameters/unroll),
     batch_size = batchSize,

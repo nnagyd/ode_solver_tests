@@ -1,10 +1,9 @@
-using DifferentialEquations, CPUTime, Statistics, LoopVectorization
+using DifferentialEquations, CPUTime, Statistics, SimpleDiffEq, LoopVectorization
 
 #settings
 const unroll = 128
 const numberOfParameters = 46080
 const numberOfRuns = 3
-nocheck(dt,u,p,t) = false
 
 #parameters and initial conditions
 parameterList = collect(range(0.0, stop = 21.0, length = numberOfParameters))
@@ -30,13 +29,12 @@ prob = ODEProblem(lorenz!, u0, tspan, p)
 
 solve(
   prob,
-  RK4(),
+  LoopRK4(),
   save_everystep = false,
   save_start = false,
   save_end = true,
   adaptive = false,
-  dt = 0.01,
-  unstable_check = nocheck
+  dt = 0.01
   )
 GC.gc()
 
@@ -52,13 +50,12 @@ for runs in 1:numberOfRuns
 
     solve(
       prob,
-      RK4(),
+      LoopRK4(),
       save_everystep = false,
       save_start = false,
       save_end = true,
       adaptive = false,
-      dt = 0.01,
-      unstable_check = nocheck
+      dt = 0.01
       )
   end
 

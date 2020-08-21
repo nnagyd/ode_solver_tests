@@ -1,4 +1,4 @@
-using DifferentialEquations, DelimitedFiles, Plots, CPUTime
+using DifferentialEquations, DelimitedFiles, Plots, CPUTime, MuladdMacro
 
 const numberOfRuns = 3
 const numberOfParameters = 256
@@ -42,7 +42,7 @@ y0 = [1.0,0.0] #inital conditions
 
 #ODE system
 function keller_miksis!(dy,y,C,τ)
-    @inbounds begin
+    @inbounds @muladd begin
         rx1 = 1/y[1]
         p = rx1 ^ C[10]
 
@@ -63,7 +63,7 @@ end
 
 #ensemble problem
 function prob_func!(problem,i,repeat)
-    @inbounds begin
+    @inbounds @muladd begin
         #calculating indexes
         problem.u0[1] = initialValues[i,1]
         problem.u0[2] = initialValues[i,2]
@@ -92,6 +92,25 @@ function prob_func!(problem,i,repeat)
     end
     problem
 end
+
+# Compile once
+tSpan = (0.0,1024.0)
+prob = ODEProblem(keller_miksis!,y0,tSpan,C)
+ensemble_prob = EnsembleProblem(prob,prob_func = prob_func!)
+res = solve(
+	ensemble_prob,
+	DP5(),
+	EnsembleSerial(),
+	abstol = 1e-10,
+	reltol = 1e-10,
+	trajectories= numberOfParameters,
+	save_everystep = false,
+	save_start = false,
+	save_end = true,
+	dense = false,
+	maxiters = 1e10,
+	dtmin = 1e-10)
+GC.gc()
 
 #solving ODE 3x and measuring elapsed CPU time
 times = Vector{Float64}(undef,numberOfRuns)
