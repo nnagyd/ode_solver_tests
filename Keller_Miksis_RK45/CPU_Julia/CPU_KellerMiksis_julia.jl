@@ -1,4 +1,4 @@
-using DifferentialEquations, DelimitedFiles, Plots, CPUTime
+using DifferentialEquations, DelimitedFiles, Plots, CPUTime, MuladdMacro
 
 const numberOfRuns = 3
 const numberOfParameters = 256
@@ -63,7 +63,7 @@ end
 
 #ensemble problem
 function prob_func!(problem,i,repeat)
-    @inbounds begin
+    @inbounds @muladd begin
         #calculating indexes
         problem.u0[1] = initialValues[i,1]
         problem.u0[2] = initialValues[i,2]
@@ -110,6 +110,7 @@ res = solve(
 	dense = false,
 	maxiters = 1e10,
 	dtmin = 1e-10)
+GC.gc()
 
 #solving ODE 3x and measuring elapsed CPU time
 times = Vector{Float64}(undef,numberOfRuns)

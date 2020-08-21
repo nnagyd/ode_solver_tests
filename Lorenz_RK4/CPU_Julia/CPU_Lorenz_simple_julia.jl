@@ -1,4 +1,4 @@
-using DifferentialEquations, CPUTime, Statistics, SimpleDiffEq
+using DifferentialEquations, CPUTime, Statistics, SimpleDiffEq, MuladdMacro
 
 #settings
 const unroll = 128
@@ -16,12 +16,11 @@ end
 
 #ODE
 function lorenz!(du, u, p, t)
-  @inbounds for j in 1:unroll
-      index = 3(j-1)+1
-      du[index] = 10.0 * (u[index+1] - u[index])
-      du[index+1] = p[j] * u[index] - u[index+1] - u[index] * u[index+2]
-      du[index+2] = u[index] * u[index+1] - 2.66666666 * u[index+2]
-  end
+    @muladd @inbounds for j in 1:unroll
+      du[j] = 10.0 * (u[j+unroll] - u[j])
+      du[j+unroll] = p[j] * u[j] - u[j+unroll] - u[j] * u[j+2*unroll]
+      du[j+2*unroll] = u[j] * u[j+unroll] - 2.66666666 * u[j+2*unroll]
+   end
 end
 
 #compile
@@ -35,9 +34,9 @@ solve(
   save_start = false,
   save_end = true,
   adaptive = false,
-  dt = 0.01,
-  unstable_check = nocheck
+  dt = 0.01
   )
+GC.gc()
 
 #simulation
 times = Vector{Float64}(undef,numberOfRuns)
@@ -56,8 +55,7 @@ for runs in 1:numberOfRuns
       save_start = false,
       save_end = true,
       adaptive = false,
-      dt = 0.01,
-      unstable_check = nocheck
+      dt = 0.01
       )
   end
 

@@ -116,6 +116,7 @@ res = solve(
 	dense = false,
 	maxiters = 1e10,
 	dtmin = 1e-10)
+GC.gc()
 
 #solving ODE 3x and measuring elapsed CPU time
 times = Vector{Float64}(undef,numberOfRuns)

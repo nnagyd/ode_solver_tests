@@ -59,6 +59,7 @@ solve(
   dt = 0.01,
   dense = false
   )
+GC.gc()
 
 #simulation
 times = Vector{Float64}(undef,numberOfRuns)
