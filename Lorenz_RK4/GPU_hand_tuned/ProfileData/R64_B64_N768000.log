@@ -1,0 +1,59 @@
+--- SUMMARY ---
+
+==21158== NVPROF is profiling process 21158, command: ./Lorenz_HandTuned.exe
+==21158== Profiling application: ./Lorenz_HandTuned.exe
+==21158== Profiling result:
+            Type  Time(%)      Time     Calls       Avg       Min       Max  Name
+ GPU activities:   84.45%  40.831ms         1  40.831ms  40.831ms  40.831ms  RungeKuttaStepRegisterFriendly(double*, double const *, int)
+                    7.95%  3.8421ms         2  1.9211ms  835.59us  3.0065ms  [CUDA memcpy HtoD]
+                    7.60%  3.6767ms         1  3.6767ms  3.6767ms  3.6767ms  [CUDA memcpy DtoH]
+No API activities were profiled.
+
+
+--- SPECIFIC METRICS AND EVENTS ---
+
+======== Warning: Skipping profiling on device 0 since profiling is not supported on devices with compute capability greater than 7.2
+==21192== NVPROF is profiling process 21192, command: ./Lorenz_HandTuned.exe
+==21192== Some kernel(s) will be replayed on device 1 in order to collect all events/metrics.
+==21192== Profiling application: ./Lorenz_HandTuned.exe
+==21192== Profiling result:
+==21192== Event result:
+Invocations                                Event Name         Min         Max         Avg       Total
+Device "GeForce GTX TITAN Black (1)"
+    Kernel: RungeKuttaStepRegisterFriendly(double*, double const *, int)
+          1                         elapsed_cycles_sm   538853967   538853967   538853967   538853967
+          1                             active_cycles   537548016   537548016   537548016   537548016
+
+==21192== Metric result:
+Invocations                               Metric Name                                Metric Description         Min         Max         Avg
+Device "GeForce GTX TITAN Black (1)"
+    Kernel: RungeKuttaStepRegisterFriendly(double*, double const *, int)
+          1                             sm_efficiency                           Multiprocessor Activity      99.75%      99.75%      99.75%
+          1                        achieved_occupancy                                Achieved Occupancy    0.491428    0.491428    0.491428
+          1                  eligible_warps_per_cycle                   Eligible Warps Per Active Cycle   27.680888   27.680888   27.680888
+          1                     local_load_throughput                      Local Memory Load Throughput  0.00000B/s  0.00000B/s  0.00000B/s
+          1                    local_store_throughput                     Local Memory Store Throughput  0.00000B/s  0.00000B/s  0.00000B/s
+          1                                       ipc                                      Executed IPC    2.001399    2.001399    2.001399
+          1                                issued_ipc                                        Issued IPC    3.966881    3.966881    3.966881
+          1                         flop_count_dp_add   Floating Point Operations(Double Precision Add)  4608000000  4608000000  4608000000
+          1                         flop_count_dp_mul   Floating Point Operations(Double Precision Mul)  5376000000  5376000000  5376000000
+          1                         flop_count_dp_fma   Floating Point Operations(Double Precision FMA)  2.3808e+10  2.3808e+10  2.3808e+10
+          1                              inst_integer                              Integer Instructions   316416000   316416000   316416000
+          1                              inst_control                         Control-Flow Instructions   153600000   153600000   153600000
+          1                        inst_compute_ld_st                           Load/Store Instructions   158976000   158976000   158976000
+          1                                 inst_misc                                 Misc Instructions     4608000     4608000     4608000
+          1                        flop_dp_efficiency                      FLOP Efficiency(Peak Double)      83.51%      83.51%      83.51%
+          1                     l1_shared_utilization                      L1/Shared Memory Utilization     Low (1)     Low (1)     Low (1)
+          1                            l2_utilization                              L2 Cache Utilization     Low (1)     Low (1)     Low (1)
+          1                          dram_utilization                         Device Memory Utilization     Low (1)     Low (1)     Low (1)
+          1                       ldst_fu_utilization              Load/Store Function Unit Utilization     Low (1)     Low (1)     Low (1)
+          1                        alu_fu_utilization              Arithmetic Function Unit Utilization    Max (10)    Max (10)    Max (10)
+          1                           stall_pipe_busy                   Issue Stall Reasons (Pipe Busy)       3.56%       3.56%       3.56%
+          1                     stall_exec_dependency        Issue Stall Reasons (Execution Dependency)      12.75%      12.75%      12.75%
+          1                   stall_memory_dependency                Issue Stall Reasons (Data Request)       0.02%       0.02%       0.02%
+          1                          stall_inst_fetch          Issue Stall Reasons (Instructions Fetch)       2.40%       2.40%       2.40%
+          1                        stall_not_selected                Issue Stall Reasons (Not Selected)      80.51%      80.51%      80.51%
+          1                     stall_memory_throttle             Issue Stall Reasons (Memory Throttle)       0.02%       0.02%       0.02%
+          1                               stall_other                       Issue Stall Reasons (Other)       0.75%       0.75%       0.75%
+
+

@@ -45,6 +45,7 @@ int main()
 	
 	SimulationStart = clock();
 	RungeKuttaStepOriginal<<<GridSize, BlockSize>>> (d_State, d_Parameters, NumberOfProblems);
+	cudaDeviceSynchronize();
 	SimulationEnd = clock();
 	
 	cout << "Simulation time: " << 1000.0*(SimulationEnd-SimulationStart) / CLOCKS_PER_SEC << "ms" << endl << endl;
