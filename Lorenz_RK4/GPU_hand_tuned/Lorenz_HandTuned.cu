@@ -93,10 +93,9 @@ void Uniform(double* x, double V, int N)
 
 __forceinline__ __device__ void Lorenz(double* __restrict__ F, const double* __restrict__ X, double P)
 {
-	// How 5 FMA and 1 ADD/MUL is possible
-	F[0] = 10.0*(X[1] - X[0]); // 2 FP inst: 1 FMA, 1 ADD
-	F[1] = P*X[0] - X[1] - X[0]*X[2]; // 2 FP inst: 2 FMA
-	F[2] = X[0]*X[1] - 2.666 * X[2]; // 2 FP inst: 1 MUL, 1 FMA
+	F[0] = 10.0*(X[1] - X[0]);
+	F[1] = P*X[0] - X[1] - X[0]*X[2];
+	F[2] = X[0]*X[1] - 2.666 * X[2];
 }
 
 __global__ void RungeKuttaStepRegisterFriendly(double* __restrict__ d_State, const double* __restrict__ d_Parameters, int N)
@@ -112,11 +111,9 @@ __global__ void RungeKuttaStepRegisterFriendly(double* __restrict__ d_State, con
 		double ks[3];
 		double x[3];
 		
-		double T    = 0.0;
 		double dT   = 1e-3;
 		double dTp2 = 0.5*dT;
 		double dTp6 = dT * (1.0/6.0);
-		//double t;
 		
 		X[0] = d_State[tid];
 		X[1] = d_State[tid + N];
@@ -126,11 +123,7 @@ __global__ void RungeKuttaStepRegisterFriendly(double* __restrict__ d_State, con
 		
 		for (int i=0; i<1000; i++)
 		{
-			// k1
 			Lorenz(k1, X, P);
-			
-			// k2
-			//t = T + 0.5*dT;
 			
 			#pragma unroll 3
 			for (int j=0; j<3; j++)
@@ -141,37 +134,27 @@ __global__ void RungeKuttaStepRegisterFriendly(double* __restrict__ d_State, con
 			
 			Lorenz(k1, x, P);
 			
-			// k3
-			//t = T + 0.5*dT;
-			
 			#pragma unroll 3
 			for (int j=0; j<3; j++)
 			{
 				x[j]  = X[j] + dTp2*k1[j];
-				ks[j] = ks[j]+2*k1[j];
+				ks[j] = ks[j]+2.0*k1[j];
 			}
 			
 			Lorenz(k1, x, P);
-			
-			// k4
-			//t = T + dT;
 			
 			#pragma unroll 3
 			for (int j=0; j<3; j++)
 			{
 				x[j] = X[j] + dT*k1[j];
-				ks[j] = ks[j]+2*k1[j];
+				ks[j] = ks[j]+2.0*k1[j];
 			}
 			
 			Lorenz(k1, x, P);
 			
-			
-			// Update state
 			#pragma unroll 3
 			for (int j=0; j<3; j++)
 				X[j] = X[j] + dTp6*( ks[j] + k1[j] );
-			
-			T += dT;
 		}
 		
 		d_State[tid] = X[0];
