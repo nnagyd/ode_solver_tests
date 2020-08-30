@@ -1,5 +1,5 @@
 //============================================================================
-// Name        : keller_miksis.cpp
+// Name        : keller_miksis_noroot.cpp
 // Author      : Lambert Plavecz
 // Version     :
 // Copyright   : no
@@ -30,7 +30,7 @@ const double mu_L = 8.902125058209557e-04;
 const double theta = 0.0;
 
 
-int num = 3000;
+int num = 30720;
 
 string file_name = "kellermiksis_cpu_noroot_output.txt";
 
@@ -110,12 +110,12 @@ int nums[11] = {256, 768, 1536, 3072, 	3840, 	5120, 	7680, 15360, 30720, 46080, 
 int main() {
 	cout << "Begin" << endl;
 
-	controlled_runge_kutta<runge_kutta_cash_karp54<state_type>> stepper(
-    default_error_checker< double , range_algebra , default_operations >( 1e-10 , 1e-10 , 0.5 , 0.5 ) );
-
+	runge_kutta_cash_karp54<state_type> rk_stepper;
+	auto stepper = make_controlled(1e-10, 1e-10, rk_stepper) ;
+	
 	state_type x(2);
 	
-for(int jj=0; jj < 9;jj++){ //parameter loop
+for(int jj=0; jj < 9;jj++){ //parameter numbers loop
 	
 	num = nums[jj];
 	cout << num << endl;
