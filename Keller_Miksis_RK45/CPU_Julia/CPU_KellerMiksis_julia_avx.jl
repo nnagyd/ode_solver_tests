@@ -1,7 +1,9 @@
-using DifferentialEquations, DelimitedFiles, Plots, CPUTime, MuladdMacro
+using DifferentialEquations, DelimitedFiles, Plots, CPUTime, LoopVectorization
 
 const numberOfRuns = 1
 const numberOfParameters = 64
+const unroll = 4
+const numberOfTrajectories = Int32(numberOfParameters/unroll)
 
 function logRange(startVal,endVal,intervals)
     intervalDelta = endVal/startVal
@@ -30,65 +32,73 @@ const P_A2_val = 0
 const f_1 = logRange(20.0,1_000.0,numberOfParameters)
 const f_2 = 0
 
-initialValues = Array{Float64,2}(undef,(numberOfParameters,2))
-for i in 1:numberOfParameters
-    initialValues[i,1] = 1.0
-    initialValues[i,2] = 0.0
+initialValues = Array{Float64,2}(undef,(numberOfTrajectories,2*unroll))
+for i in 1:numberOfTrajectories
+	for j in 0:unroll-1
+		initialValues[i,1 + 2*j] = 1.0
+	    initialValues[i,2 + 2*j] = 0.0
+	end
 end
 
 #ODE settings
-C = Vector{Float64}(undef,13) #C1-C13 -> ODE constants
-y0 = [1.0,0.0] #inital conditions
+C = Vector{Float64}(undef,13*unroll) #C1-C13 -> ODE constants
+y0 = initialValues[1,:] #inital conditions
 
 #ODE system
 function keller_miksis!(dy,y,C,τ)
-    @inbounds @muladd begin
-        rx1 = 1/y[1]
-        p = rx1 ^ C[10]
+	@avx for j = 1:unroll
+		idf = j-1
+		rx1 = 1/y[1 + 2idf]
+        p = rx1 ^ C[10 + 13idf]
 
         s1,c1 = sincos(2*pi*τ)
-        s2 = sin(2*pi*C[11]*τ+C[12])
-		c2 = cos(2*pi*C[11]*τ+C[12])
+        s2 = sin(2*pi*C[11 + 13idf]*τ+C[12 + 13idf])
+		c2 = cos(2*pi*C[11 + 13idf]*τ+C[12 + 13idf])
 
-        N = (C[13]+C[1]*y[2])*p-C[2]*(1+C[9]*y[2])-C[3]*rx1-C[4]*y[2]*rx1-1.5*(1.0-C[9]*y[2]*(1.0/3.0))*y[2]*y[2]-(C[5]*s1+C[6]*s2)*(1+C[9]*y[2])-y[1]*((C[7]*c1)+C[8]*c2)
-        D = y[1]-C[9]*y[1]*y[2]+C[4]*C[9] #denominator
+        N1 = (C[13 + 13idf]+C[1 + 13idf]*y[2 + 2idf])*p-C[2 + 13idf]*(1+C[9 + 13idf]*y[ 2+ 2idf])-C[3 + 13idf]*rx1-C[4 + 13idf]*y[2 + 2idf]*rx1
+		N2 = -1.5*(1.0-C[9+ 13idf]*y[2+ 2idf]*(1.0/3.0))*y[2 + 2idf]*y[2 + 2idf]
+		N3 = -(C[5+ 13idf]*s1+C[6+ 13idf]*s2)*(1+C[9+ 13idf]*y[2 + 2idf])-y[1 + 2idf]*((C[7+ 13idf]*c1)+C[8+ 13idf]*c2)
+		N = N1 + N2 + N3
+        D = y[1+ 2idf]-C[9+ 13idf]*y[1+2idf]*y[2+2idf]+C[4+ 13idf]*C[9+ 13idf] #denominator
         rD = 1.0 / D
 
         #ODE system
-        dy[1] = y[2]
-        dy[2] = N * rD
-    end
-    nothing
+        dy[1 + 2idf] = y[2 + 2idf]
+        dy[2 + 2idf] = N * rD
+	end
+	nothing
 end
 
 #ensemble problem
 function prob_func!(problem,i,repeat)
-    @inbounds @muladd begin
-        #calculating indexes
-        problem.u0[1] = initialValues[i,1]
-        problem.u0[2] = initialValues[i,2]
+    @inbounds begin
+		  for j = 0:unroll-1
+			#calculating indexes
+			problem.u0[1 + 2j] = initialValues[i,1 + 2j]
+			problem.u0[2 + 2j] = initialValues[i,2 + 2j]
 
-        #calculating physical parameters
-        ω_1 = 2*pi*f_1[i]*1000.0
-        ω_2 = 0
-        P_A1 = P_A1_val*1e5
-        P_A2 = P_A2_val*1e5
+			#calculating physical parameters
+			ω_1 = 2*pi*f_1[unroll*(i-1) + j + 1]*1000.0
+			ω_2 = 0
+			P_A1 = P_A1_val*1e5
+			P_A2 = P_A2_val*1e5
 
-        #calculating ODE constants
-        tmp_1 = ((2*pi)/(R_E*ω_1))^2
-        problem.p[1] = (1-3*γ)/(ρ_L*c_L)*(P_inf - p_v + 2 * σ / R_E) * ((2*pi)/(R_E*ω_1))
-        problem.p[2] = (P_inf-p_v)/ρ_L*tmp_1
-        problem.p[3] = (2*σ)/(ρ_L*R_E)*tmp_1
-        problem.p[4] = 4*μ_L*2*pi/(ρ_L*R_E*R_E*ω_1)
-        problem.p[5] = P_A1/ρ_L*tmp_1
-        problem.p[6] = P_A2/ρ_L*tmp_1
-        problem.p[7] = R_E * ω_1 * P_A1/(ρ_L*c_L)*tmp_1
-        problem.p[8] = R_E * ω_1 * P_A2/(ρ_L*c_L)*tmp_1
-        problem.p[9] = R_E * ω_1 / (2*pi*c_L)
-        problem.p[10] = 3*γ
-        problem.p[11] = ω_2/ω_1
-        problem.p[12] = θ
-        problem.p[13] = (P_inf - p_v + 2 * σ / R_E)/ρ_L*tmp_1
+			#calculating ODE constants
+			tmp_1 = ((2*pi)/(R_E*ω_1))^2
+			problem.p[1 + 13j] = (1-3*γ)/(ρ_L*c_L)*(P_inf - p_v + 2 * σ / R_E) * ((2*pi)/(R_E*ω_1))
+			problem.p[2 + 13j] = (P_inf-p_v)/ρ_L*tmp_1
+			problem.p[3 + 13j] = (2*σ)/(ρ_L*R_E)*tmp_1
+			problem.p[4 + 13j] = 4*μ_L*2*pi/(ρ_L*R_E*R_E*ω_1)
+			problem.p[5 + 13j] = P_A1/ρ_L*tmp_1
+			problem.p[6 + 13j] = P_A2/ρ_L*tmp_1
+			problem.p[7 + 13j] = R_E * ω_1 * P_A1/(ρ_L*c_L)*tmp_1
+			problem.p[8 + 13j] = R_E * ω_1 * P_A2/(ρ_L*c_L)*tmp_1
+			problem.p[9 + 13j] = R_E * ω_1 / (2*pi*c_L)
+			problem.p[10 + 13j] = 3*γ
+			problem.p[11 + 13j] = ω_2/ω_1
+			problem.p[12 + 13j] = θ
+			problem.p[13 + 13j] = (P_inf - p_v + 2 * σ / R_E)/ρ_L*tmp_1
+		end
     end
     problem
 end
@@ -103,7 +113,7 @@ res = solve(
 	EnsembleSerial(),
 	abstol = 1e-10,
 	reltol = 1e-10,
-	trajectories= numberOfParameters,
+	trajectories=numberOfTrajectories,
 	save_everystep = false,
 	save_start = false,
 	save_end = true,
@@ -114,7 +124,7 @@ GC.gc()
 
 #solving ODE 3x and measuring elapsed CPU time
 times = Vector{Float64}(undef,numberOfRuns)
-for runs in 1:numberOfRuns
+for runs = 1:numberOfRuns
     tStart = CPUtime_us()
 
     #transient
@@ -128,7 +138,7 @@ for runs in 1:numberOfRuns
         EnsembleSerial(),
         abstol = 1e-10,
         reltol = 1e-10,
-        trajectories= numberOfParameters,
+        trajectories= numberOfTrajectories,
         save_everystep = false,
         save_start = false,
         save_end = true,
@@ -136,9 +146,10 @@ for runs in 1:numberOfRuns
         maxiters = 1e10,
         dtmin = 1e-10)
 
-    for i in 1:numberOfParameters
-        initialValues[i,1] = res[i].u[end][1]
-        initialValues[i,2] = res[i].u[end][2]
+    for i in 1:numberOfTrajectories
+		for j in 1:2unroll
+	        initialValues[i,j] = res[i].u[end][j]
+		end
     end
 
     #save
@@ -152,7 +163,7 @@ for runs in 1:numberOfRuns
         EnsembleSerial(),
         abstol = 1e-10,
         reltol = 1e-10,
-        trajectories= numberOfParameters,
+        trajectories= numberOfTrajectories,
         save_everystep = true,
         save_start = false,
         save_end = true,
@@ -170,26 +181,18 @@ println("----------------------")
 println("Time: "*string(times))
 println("Parameter number: "*string(numberOfParameters))
 
-outputData = zeros(numberOfParameters,4)
-for i in 1:numberOfParameters
-    outputData[i,1] = i
-    outputData[i,2] = f_1[i]
-    outputData[i,3] = res[i].u[end][1]
-    outputData[i,4] = res[i].u[end][2]
-end
-
-writedlm("keller_miksis_endvalues.csv", outputData, ',')
-
 #finding global maxima
 y_maxs = Vector{Float64}(undef,numberOfParameters)
-for i in 1:numberOfParameters
-    max = 0
-    for val in res[i].u
-        if max < val[1]
-            max = val[1]
-        end
-    end
-    y_maxs[i] = max
+for i = 1:numberOfTrajectories
+	for j = 0:unroll-1
+	    max = 0
+	    for val in res[i].u
+	        if max < val[1 + 2*j]
+	            max = val[1 + 2*j]
+	        end
+	    end
+	    y_maxs[1 + unroll*(i-1) + j] = max
+	end
 end
 
 #plot for comparision
