@@ -40,7 +40,7 @@ const double theta = 0.0;
 typedef double value_type;
 typedef thrust::device_vector< value_type > state_type;
 
-const int num = 12; 
+int num = 12; 
 
 string file_name = "kellermiksis_thrust_output.txt";
 
@@ -270,7 +270,7 @@ int main() {
 
 	typedef runge_kutta_cash_karp54< state_type , value_type , state_type , value_type > stepper_type;
 
-	for(int jj=12; jj < 18;jj++){ //parameter loop
+	for(int jj=0; jj < 12;jj++){ //parameter loop
 	
 	num = nums[jj];
 	cout << num << endl;
