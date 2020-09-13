@@ -4,7 +4,6 @@
 // Version     :
 // Copyright   : no
 // Description : Parameter study of the Keller-Miksis equation with odeint rkck54
-//					includes basic rootfinding algorithm for event handling
 //============================================================================
 
 
@@ -30,16 +29,15 @@ const double c_L = 1.497251785455527e+03;
 const double mu_L = 8.902125058209557e-04;
 const double theta = 0.0;
 
-const double root_tolerance = 1.0e-6;
 
-int num = 3000;
+int num = 30720;
 
 string file_name = "kellermiksis_cpu_output.txt";
 
 typedef double value_type;
 typedef std::vector< value_type > state_type;
 
-std::vector<double> extrema(2 * num);
+std::vector<double> extrema;
 
 class km{
 	state_type C;
@@ -69,113 +67,41 @@ public:
 						-x[0]*(C[7]*cos(2.0*M_PI*t) + C[8]*cos(2.0*M_PI*C[11]*t+C[12]));
 
 		double D = x[0] - C[9]*x[0]*x[1] + C[4]*C[9];
-		
-		
 
 		dxdt[0] = x[1];
 		dxdt[1] = N/D;
 	}
 };
 
-struct event_exception{
-	int event;
-	double t_next;
-	double t_start;
-	state_type x_prev;
-	state_type x_next;
-};
-
 class observer
 {
-    double extr_prev;
-	double t_prev = 0.0;
-	state_type x_prev;
-    int count = 0;
     int no;
-	bool event = false;
 
 public:
     observer(int row): no(row) { 
-    	extrema[2*no] = 0.0; //initial max
-		extrema[2*no+1] = 10000.0; //initial min
-		extr_prev = 200.0; //some arbitrary large number
+    	extrema[no] = 0.0; //initial max
     }
 
     void operator()(const state_type &x , double t )
     {
-    	if(t==0.0){
-    		x_prev = x;
-    		return;
-    	}
-		if(event){
-			event = false;
-			if(count >= 2048){ //saving
-    	    	if(x[0] > extrema[2*no]) extrema[2*no] = x[0];
-    		   	if(x[0] < extrema[2*no+1]) extrema[2*no+1] = x[0];
-    	    	if(count == 2048+63) throw 0; //end integration
-    	    }
-			count++;
-			if(fabs(extr_prev - x[0]) < 1.0e-9 && fabs(x[0]) > 1.0e-9){ //check whether solution converges
-				//if true save the current value and end integration
-				if(x[0] > extrema[2*no]) extrema[2*no] = x[0]; //max
-    			if(x[0] < extrema[2*no+1]) extrema[2*no+1] = x[0]; //min
-				throw -1; //end integration
-			}
-			extr_prev = x[0];  //save extremum for convergence check
-			x_prev = x;
-			t_prev = t;
-			return;
-		}
-		if(fabs(x[1]) < root_tolerance){
-			if(count >= 2048){ //saving
-    			if(x[0] > extrema[2*no]) extrema[2*no] = x[0];
-    		   	if(x[0] < extrema[2*no+1]) extrema[2*no+1] = x[0];
-				if(count == 2048+63) throw 0; //end integration
-    		}
-    		count++;
-    		if(fabs(extr_prev - x[0]) < 1.0e-9 && fabs(x[0]) > 1.0e-9){ //check whether solution converges
-    			if(x[0] > extrema[2*no]) extrema[2*no] = x[0]; //max
-    			if(x[0] < extrema[2*no+1]) extrema[2*no+1] = x[0]; //min
-    	    	throw -1;
-    	    }
-			extr_prev = x[0];
-    	}else if(x[1]*x_prev[1] < 0.0 && fabs(x_prev[1]) > root_tolerance){//extremum
-			if(count < 2048){
-				count++;
-				if(fabs(extr_prev - x[0]) < 1.0e-9 && fabs(x[0]) > 1.0e-9){ //check whether solution converges
-					if(x[0] > extrema[2*no]) extrema[2*no] = x[0]; //max
-					if(x[0] < extrema[2*no+1]) extrema[2*no+1] = x[0]; //min
-					throw -1;
-				}
-				extr_prev = x[0];
-			}else{
-				event = true;
-				event_exception ie;
-				ie.x_prev = x_prev;
-				ie.x_next = x;
-				ie.t_start = t_prev;
-				ie.t_next = t;
-				throw ie;
-			}
-    	}
-    	x_prev = x;
-		t_prev = t;
+    	if(x[0] > extrema[no]) extrema[no] = x[0]; //max saving
     }
 };
 int nums[11] = {256, 768, 1536, 3072, 	3840, 	5120, 	7680, 15360, 30720, 46080, 61440}; // 76800, 92160, 122880, 184320, 307200, 768000, 4147200};
-//milliseconds 59690 179142 358619 717147 896913 1217862 1826911
+//milliseconds 78032 236444 473084 946772 1184320 1577270 2465706 x 10207031
 int main() {
-	cout << "Begin" << setprecision(17) << endl;
+	cout << "Begin" << endl;
 
-	typedef runge_kutta_cash_karp54<state_type> stepper_type;
-	auto stepper = make_controlled(1.0e-10, 1.0e-10, stepper_type());
+	runge_kutta_cash_karp54<state_type> rk_stepper;
+	auto stepper = make_controlled(1e-10, 1e-10, rk_stepper) ;
+	
 	state_type x(2);
 	
-for(int jj=6; jj < 11;jj++){ //parameter loop
+for(int jj=0; jj < 11;jj++){ //parameter numbers loop
 	
 	num = nums[jj];
 	cout << num << endl;
-	extrema = std::vector<double>(2 * num);
+	extrema = std::vector<double>(num);
 
 	auto t1 = chrono::high_resolution_clock::now();
 
@@ -192,47 +118,11 @@ for(int jj=6; jj < 11;jj++){ //parameter loop
 		km equation( 1.5*1e5, 0.0, 2000.0*M_PI*f1, 0.0);
 		observer obs(u);
 		
+		//transient
+		integrate_adaptive(boost::ref(stepper), boost::ref(equation), x, 0.0, 1024.0, 0.01);
+		//max and min search
+		integrate_adaptive(boost::ref(stepper), boost::ref(equation), x, 1024.0, 1088.0, 0.01, boost::ref(obs));
 		
-		double t_start = 0.0;
-		double dt_start = 0.01;
-		while(true){
-			try{
-				integrate_adaptive(stepper, boost::ref(equation), x, t_start, 1.0e23, dt_start, boost::ref(obs));
-			}catch(event_exception & ee){
-				
-				t_start = ee.t_start;
-				double t_start_tmp = t_start;
-				double t_end = ee.t_next;
-				state_type x_start = ee.x_prev;
-				state_type x_tmp = x_start;				
-				double dt = (t_end-t_start)/2;
-				double dt_temp = dt;
-				stepper.try_step(boost::ref(equation), x_tmp, t_start_tmp, dt_temp);
-				
-				while(fabs(x_tmp[1]) > root_tolerance && dt!=0.0){
-					if(x_start[1]*x_tmp[1] < 0.0){
-						dt = dt/2;
-						dt_temp = dt;
-						t_start_tmp = t_start;
-						x_tmp = x_start;
-						stepper.try_step(boost::ref(equation), x_tmp, t_start_tmp, dt_temp);
-					}else{
-						t_start += dt;
-						dt = dt/2;
-						dt_temp = dt;
-						t_start_tmp = t_start;
-						x_start = x_tmp;
-						stepper.try_step(boost::ref(equation), x_tmp, t_start_tmp, dt_temp);
-					}
-				}
-				t_start += dt;
-				x = x_tmp;
-				dt_start = t_end - t_start_tmp;
-			}catch(int t){
-				//cout << "Enough" << endl;
-				break;
-			}
-		}
 	}
 
 	ofstream ofs(file_name);
@@ -241,7 +131,7 @@ for(int jj=6; jj < 11;jj++){ //parameter loop
 	//ofs.flags(ios::scientific);
 	for(int u = 0;u < num;u++){
 		ofs << 1.5 << " " << B*pow(EpB, u*invnum) << " " << 0.0 << " " << 0.0 << " " << theta << " " << R_E
-			<< " " << extrema[2*u] << " " << extrema[2*u+1] << "\n";
+			<< " " << extrema[u] << "\n";
 	}
 
 	ofs.flush();
@@ -252,6 +142,5 @@ for(int jj=6; jj < 11;jj++){ //parameter loop
 	cout << "Time (ms):" << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << endl;
 	
 }
-	
 	return 0;
 }

@@ -39,9 +39,8 @@ const double theta = 0.0;
 
 typedef double value_type;
 typedef thrust::device_vector< value_type > state_type;
-typedef thrust::device_vector< int > int_vector;
 
-const int num = 128; 
+const int num = 12; 
 
 string file_name = "kellermiksis_thrust_output.txt";
 
@@ -237,42 +236,13 @@ public:
         __host__ __device__
         void operator()( T t )
         {
-			// unpack the parameter we want to vary and the Lorenz variables
-            int count = thrust::get< 3 >( t );
-			if(count > 2048+64) return;
             value_type x = thrust::get< 0 >( t );
-            value_type y = thrust::get< 1 >( t );
-			value_type y_prev = thrust::get< 2 >( t );
-			value_type extr_prev = thrust::get< 4 >( t );
-			value_type min = thrust::get< 5 >( t );
-			value_type max = thrust::get< 6 >( t );
-			if(y*y_prev < 0.0){//extremum
-				if(count > 2047 && count < 2048 + 64){
-					if(x > max) thrust::get< 6 >( t ) = x; //max
-					if(x < min) thrust::get< 5 >( t ) = x; //min
-				}
-				count++;
-				
-				if(fabs(extr_prev - x) < 1.0e-9 && fabs(x) > 1.0e-9 && y_prev!=0.0){ //convergence detection
-					if(x > max) thrust::get< 6 >( t ) = x; //max
-					if(x < min) thrust::get< 5 >( t ) = x; //min
-					count = 5000;
-				}
-				thrust::get< 4 >( t ) = x;
-				thrust::get< 3 >( t ) = count;
-			}
-			thrust::get< 2 >( t ) = y;
+			value_type max = thrust::get< 1 >( t );
+			if(x > max) thrust::get< 1 >( t ) = x; //max
         }
     };
 	
-    observer(size_t N, state_type &min, state_type &max, int_vector &count): m_N( N ), m_max(max), m_min(min), m_count(count)
-	{
-    	y_prev = state_type( N );
-		thrust::fill(y_prev.begin(), y_prev.end(), 0.0);
-		thrust::fill(m_count.begin(), m_count.end(), 0);
-		extr_prev = state_type( N );
-		thrust::fill(extr_prev.begin(), extr_prev.end(), 100.0); //arbitrary large number
-    }
+    observer(size_t N, state_type &max): m_N( N ), m_max(max){}
 
 	template< class State >
     void operator()( State &x, double t )
@@ -281,45 +251,28 @@ public:
 		thrust::for_each(
                 thrust::make_zip_iterator( thrust::make_tuple(
                         x.begin() ,
-                        x.begin() + m_N ,
-						y_prev.begin(),
-						m_count.begin() ,
-						extr_prev.begin(),
-						m_min.begin(),
 						m_max.begin() ) ),
                 thrust::make_zip_iterator( thrust::make_tuple(
-                        x.begin() + m_N ,
                         x.end(),
-						y_prev.end() ,
-						m_count.end() ,
-						extr_prev.end(),
-						m_min.end() ,
 						m_max.end() ) ) ,
                 obs_fun );
-		
-		auto min_pos = thrust::min_element(m_count.begin(),m_count.end())-m_count.begin();
-		if(m_count[min_pos] >= 2048+64) throw "Ended";
     }
 	
 private:
-	state_type extr_prev;
-	state_type y_prev;
-	state_type &m_min;
 	state_type &m_max;
 	size_t m_N;
-	int_vector &m_count;
 	observer_functor obs_fun;
 };
-int nums[18] = {256, 768, 1536, 3072, 3840, 5120, 7680, 15360, 30720, 46080, 61440, 76800, 92160, 122880, 184320, 307200, 768000, 4147200};
+int nums[12] = {16, 32, 64, 128, 256, 512, 1024, 1536, 3072, 3840, 5120, 7680};// 15360, 30720, 46080, 61440, 76800, 92160, 122880, 184320, 307200, 768000, 4147200};
 
 int main() {
 	cout << "Keller-Miksis Thrust started" << endl;
 
 	typedef runge_kutta_cash_karp54< state_type , value_type , state_type , value_type > stepper_type;
 
-	//for(int jj=0; jj < 18;jj++){ //parameter loop
+	for(int jj=12; jj < 18;jj++){ //parameter loop
 	
-	//num = nums[jj];
+	num = nums[jj];
 	cout << num << endl;
 	auto t1 = chrono::high_resolution_clock::now();
 
@@ -341,25 +294,18 @@ int main() {
 	// initialize y
 	thrust::fill( x.begin() + num, x.end() , 0.0 );
 	
-	state_type min(num);
 	state_type max(num);
-	int_vector count(num);
-	thrust::fill(count.begin(), count.end(), 0);
-	thrust::fill( min.begin(), min.end(), 10000.0); //arbitrary large number
-	thrust::fill( max.begin(), max.end(), 0.0);     //arbitrary small number
+	thrust::fill( max.begin(), max.end(), 0.0);     //arbitrary small number, initial max
 
 	keller_miksis km( num , f );
-	observer obs(num, min, max, count);
+	observer obs(num, max);
 	
 	auto stepper = make_controlled(1.0e-10, 1.0e-10, stepper_type());
 	
-	try{
-		integrate_adaptive(stepper, km, x, 0.0, 1.0e23, 0.01, obs);
-	}catch(...){
-		//cout << "Enough" << endl;
-	}
-	thrust::host_vector<value_type> min_host(num);
-	min_host = min;
+	integrate_adaptive(boost::ref(stepper), boost::ref(km), x, 0.0, 1024.0, 0.01);
+	
+	integrate_adaptive(boost::ref(stepper), boost::ref(km), x, 1024.0, 1088.0, 0.01, obs);
+	
 	thrust::host_vector<value_type> max_host(num);
 	max_host = max;
 	
@@ -368,7 +314,7 @@ int main() {
 	ofs << setprecision(17);
 	for(int u = 0;u < num;u++){
 		ofs << 1.5 << " " << f_host[u]/(2000.0*M_PI) << " " << 0.0 << " " << 0.0 << " " << theta << " " << R_E 
-			<< " " << min_host[u] << " " << max_host[u] << "\n";
+			<< " " << max_host[u] << "\n";
 	}
 
 	ofs.flush();
@@ -378,6 +324,6 @@ int main() {
 	cout << "Done" << endl;
 	cout << "Time (ms):" << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << endl;
 	
-	//} //end of parameter loop
+	} //end of parameter loop
 	return 0;
 }
