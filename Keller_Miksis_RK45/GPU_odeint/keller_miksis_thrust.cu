@@ -17,7 +17,6 @@
 #include <utility>
 
 #include <thrust/device_vector.h>
-#include <thrust/reduce.h>
 #include <thrust/functional.h>
 
 #include <boost/numeric/odeint.hpp>
@@ -263,16 +262,12 @@ private:
 	size_t m_N;
 	observer_functor obs_fun;
 };
-int nums[12] = {16, 32, 64, 128, 256, 512, 1024, 1536, 3072, 3840, 5120, 7680};// 15360, 30720, 46080, 61440, 76800, 92160, 122880, 184320, 307200, 768000, 4147200};
 
 int main() {
 	cout << "Keller-Miksis Thrust started" << endl;
 
 	typedef runge_kutta_cash_karp54< state_type , value_type , state_type , value_type > stepper_type;
 
-	for(int jj=0; jj < 12;jj++){ //parameter loop
-	
-	num = nums[jj];
 	cout << num << endl;
 	auto t1 = chrono::high_resolution_clock::now();
 
@@ -324,6 +319,5 @@ int main() {
 	cout << "Done" << endl;
 	cout << "Time (ms):" << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << endl;
 	
-	} //end of parameter loop
 	return 0;
 }

@@ -37,7 +37,7 @@ int num = 0;
 const int vectorSize = 4;
 const int arraySize = 2;
 
-std::string file_name = "kellermiksis_vcl_noroot_output.txt";
+std::string file_name = "kellermiksis_vcl_output.txt";
 
 typedef Vec4d value_type;
 typedef std::array< value_type , arraySize> state_type;
@@ -166,7 +166,7 @@ public:
 
 
 int nums[11] = {256, 768, 1536, 3072, 3840, 5120, 	7680,    15360,   30720, 46080, 61440}; // 76800, 92160, 122880, 184320, 307200, 768000, 4147200};
-//milliseconds 41633 108161 199804 371821 457157 592988 857944 1633295 3141603
+
 int main() {
 	cout << "Begin" << endl;
 

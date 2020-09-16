@@ -75,7 +75,7 @@ public:
 
 class observer
 {
-    int no;
+    int no; //id number of ode
 
 public:
     observer(int row): no(row) { 
@@ -88,7 +88,7 @@ public:
     }
 };
 int nums[11] = {256, 768, 1536, 3072, 	3840, 	5120, 	7680, 15360, 30720, 46080, 61440}; // 76800, 92160, 122880, 184320, 307200, 768000, 4147200};
-//milliseconds 78032 236444 473084 946772 1184320 1577270 2465706 x 10207031
+
 int main() {
 	cout << "Begin" << endl;
 
