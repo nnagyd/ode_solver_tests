@@ -58,7 +58,7 @@ global lastVals = [0.0,1.0,2.0,3.0]
 #compile once
 tSpan = [0.0,1e10]
 y0 = [0.2,0.0,0.0]
-q[1] = parameterList[par]
+q[1] = parameterList[1]
 valveODE = ODEProblem(valve!,y0,tSpan,q)
 res = solve(
     valveODE,
@@ -149,11 +149,6 @@ println("--------------------------------------------")
 println("Time: "*string(times))
 println("Parameter number: "*string(numberOfParameters))
 
-plotly()
-plt = scatter(legend = false,xlims =(0.,10.),ylims = (-0.2,10.))
-for j in 1:numberOfSaves
-    scatter!(plt,parameterList,outputData[:,j+32],markersize=2,c = :red)
-    scatter!(plt,parameterList,outputData[:,j],markersize=2,c = :black)
-end
+plt = scatter(parameterList,outputData,marker = 1,color = :black,xlims =(0.,10.),ylims = (-0.2,10.),legend=false)
 
 writedlm("data.csv", outputData, ',')
