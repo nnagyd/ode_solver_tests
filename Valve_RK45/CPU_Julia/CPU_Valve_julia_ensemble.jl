@@ -20,7 +20,6 @@ global outputData = ones(numberOfParameters,65)*-1 #initialize output array with
 
 #ensemble problem
 function parameter_change!(problem,i,repeat)
-    println(i)
     @inbounds begin
         problem.p[1] = parameterList[i] #parameter
         problem.p[3] = i #number
@@ -133,9 +132,6 @@ println("----------------------")
 println("Time: "*string(times))
 println("Parameter number: "*string(numberOfParameters))
 
-plt = scatter(marker = 2,legend = false,xlims =(0.,10.),ylims = (-0.2,10.))
-for j in 2:65
-    scatter!(plt,outputData[:,1],outputData[:,j],marker = 1,color = :black)
-end
+plt = scatter(outputData[:,1],outputData[:,2:65],marker = 1,color = :black,xlims =(0.,10.),ylims = (-0.2,10.),legend=false)
 
 writedlm("data.csv", outputData, ',')
