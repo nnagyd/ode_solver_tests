@@ -4,10 +4,9 @@ const numberOfParameters = 256
 const numberOfRuns = 3
 const numberOfTransient = 1024
 const numberOfSaves = 32
-const convergenceTol = 1e-5
 
 #Parameter list
-parameterList = collect(range(0.1,stop = 10.0,length = numberOfParameters))
+parameterList = collect(range(0.0,stop = 10.0,length = numberOfParameters))
 q =  Vector{Float64}(undef,1)
 
 #ODE
@@ -47,13 +46,12 @@ cb = VectorContinuousCallback(
     condition,
     local_min!,2,
     affect_neg! = local_max!,
-    rootfind = false,
+    rootfind = false, #does not work when true
     save_positions = (true,true),
-    abstol=1e-10,reltol=1e-10)
+    abstol=1e-6,reltol=1e-6)
 
 #output data
 global outputData = zeros(numberOfParameters,numberOfSaves*2);
-global lastVals = [0.0,1.0,2.0,3.0]
 
 #compile once
 tSpan = [0.0,1e10]
@@ -101,22 +99,6 @@ for runs in 1:numberOfRuns
                 dtmin = 1e-12)
             y0 = res.u[end]
             tSpan[1] = res.t[end]
-
-            #saving last 3 vals
-            lastVals[4] = lastVals[3]
-            lastVals[3] = lastVals[2]
-            lastVals[2] = lastVals[1]
-            lastVals[1] = y0[1]
-
-            #terminate if steady state is reached
-            if abs(lastVals[1]-lastVals[2]) < convergenceTol && abs(lastVals[2]-lastVals[3]) < convergenceTol
-                break
-            end
-
-            #terminate if periodic solution is found
-            if abs(lastVals[1]-lastVals[3]) < convergenceTol && abs(lastVals[2]-lastVals[4]) < convergenceTol
-                break
-            end
         end
 
         #save values

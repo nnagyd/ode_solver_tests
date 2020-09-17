@@ -13,7 +13,7 @@ function valve!(dy,y,q,t)
 end
 
 tSpan = (0.0,1e10)
-parameterList = collect(range(0.2,stop = 10.0,length = numberOfParameters))
+parameterList = collect(range(0.0,stop = 10.0,length = numberOfParameters))
 q =  Vector{Float64}(undef,4) #q[1] --> q parameter q[2] --> number of iterations q[3] --> number of equation, q[4] last extremum
 y0 = [0.2,0.0,0.0]
 global outputData = ones(numberOfParameters,65)*-1 #initialize output array with -1s
@@ -89,7 +89,13 @@ end
 
 #defining ODE, Callback and ensemble simulation
 valveODE = ODEProblem(valve!,y0,tSpan,q)
-cb = VectorContinuousCallback(condition,local_min!,2,affect_neg! = local_max!)
+cb = VectorContinuousCallback(
+    condition,
+    local_min!,2,
+    affect_neg! = local_max!,
+    rootfind = true,
+    save_positions = (true,true),
+    abstol=1e-6,reltol=1e-6)
 ensemble_prob = EnsembleProblem(valveODE,prob_func = parameter_change!)
 
 # Compile once
