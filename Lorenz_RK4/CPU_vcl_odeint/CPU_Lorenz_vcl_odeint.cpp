@@ -28,9 +28,9 @@ void lorenz(const state_type &x, state_type &dxdt, double t)
 {
 	for(int i = 0, j = 0; i < unroll; i++, j+=3)
 	{
-		dxdt[i] = sigma*(x[i+1] - x[i+0]);
-		dxdt[i+1] = x[i]*(k_global[j] - x[i+2]) - x[i+1];
-		dxdt[i+2] = x[i]*x[i+1] - beta*x[i+2];
+		dxdt[j] = sigma*(x[j+1] - x[j+0]);
+		dxdt[j+1] = x[j]*(k_global[i] - x[j+2]) - x[j+1];
+		dxdt[j+2] = x[j]*x[j+1] - beta*x[j+2];
 	}
 }
 
