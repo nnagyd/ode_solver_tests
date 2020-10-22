@@ -45,4 +45,4 @@ set(p4,'Color',[0.7 0.0 1], 'LineStyle','-','LineWidth',2);
 set(p6,'Color',[1 0.1 0.5], 'LineStyle','-','LineWidth',2);
 set(p7,'Color',[0.5 0.5 0], 'LineStyle','-','LineWidth',2);
 xlabel('N','FontSize',20,'FontWeight','bold','FontName','Times');
-ylabel('1000\timesRK4 step (s)','FontSize',20,'FontWeight','bold','FontName','Times');
+ylabel('Futási idő (s)','FontSize',20,'FontWeight','bold','FontName','Times');
