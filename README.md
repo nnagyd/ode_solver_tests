@@ -1,5 +1,5 @@
 # Test Codes for Manuscript
- Computer Physics Communications
+Communications in Nonlinear Science and Numerical Simulation
  
  In order to run the codes:
  * ODEINT:
